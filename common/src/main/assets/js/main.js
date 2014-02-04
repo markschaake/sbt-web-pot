@@ -1,3 +1,9 @@
 var foo = 1;
 
-bar = "abcs"
+var bar = "abcs";
+
+var baz = function() { return foo + bar; };
+
+baz();
+
+

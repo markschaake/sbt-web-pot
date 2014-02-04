@@ -1,5 +1,7 @@
 import spray.routing.SimpleRoutingApp
 
+import akka.actor._
+
 object UI2 extends App with SimpleRoutingApp {
 
   implicit val system = ActorSystem("ui2")
