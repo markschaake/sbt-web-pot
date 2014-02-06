@@ -11,13 +11,17 @@ object UI1 extends App with SimpleRoutingApp {
       get {
         dynamic {
           println("Getting from resource")
-          getFromResource("main.js")
+          getFromFile("target/public/index.html")
         }
       }
     } ~
-      path("hi") {
-        complete("you")
-      }
+    path("assets" / Rest) { rest =>
+      println(s"Getting from resource: $rest")
+      getFromResource(s"public/$rest")
+    } ~
+    path("hi") {
+      complete("you")
+    }
   }
 
 }
