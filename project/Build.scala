@@ -27,7 +27,7 @@ object WebBuild extends Build {
       JSHintPlugin.jshintSettings ++ Seq(
         JsEngineKeys.engineType := JsEngineKeys.EngineType.Node)
 
-  /** Walks the directory tree and returs list of files only */
+  /** Helper that walks the directory tree and returs list of files only */
   private def filesOnly(source: File): Seq[File] =
     if (!source.isDirectory) source :: Nil
     else Option(source.listFiles) match {
@@ -40,8 +40,8 @@ object WebBuild extends Build {
   // 2. Copy generated UI files for this project into resource managed
   lazy val commonUiUserSettings = uiSettings ++ Seq(
     // Copy over common UI files into managed resources
-    resourceGenerators in Compile <+= Def.task {
-      val baseDirectories = file("common/target/public") :: Nil
+    resourceGenerators in Compile <+=  Def.task {
+      val baseDirectories = (resourceManaged in common in WebKeys.Assets).value :: Nil
       val newBase = (resourceManaged in Compile).value / "public" / "common"
       val sourceFiles = baseDirectories flatMap filesOnly
       val mappings = sourceFiles pair rebase(baseDirectories, newBase)
@@ -54,7 +54,13 @@ object WebBuild extends Build {
       val sourceFiles = baseDirectories flatMap filesOnly
       val mappings = sourceFiles pair rebase(baseDirectories, newBase)
       IO.copy(mappings, true).toSeq
-    }
+    },
+    // watch sources in common project to hot-reload
+    watchTransitiveSources <++= Def.task {
+      (unmanagedSources in common in WebKeys.Assets).value ++
+        (unmanagedResources in common in WebKeys.Assets).value
+    },
+    (compile in Compile) <<= (compile in Compile).dependsOn(compile in Compile in common)
   )
 
   lazy val root = project.in(file(".")).aggregate(ui1, ui2).settings(
@@ -64,6 +70,7 @@ object WebBuild extends Build {
   lazy val common = project.in(file("common"))
     .settings(uiSettings: _*)
     .settings(
+      // Force copyResources on each compile - which puts compiled assets into common/target/public
       (compile in Compile) <<= (compile in Compile).dependsOn(copyResources in WebKeys.Assets)
     )
 
